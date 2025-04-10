@@ -2,73 +2,58 @@ pipeline {
     agent any
 
     environment {
-        REMOTE_HOST = 'user@remote-vm-ip'      // SSH login info for remote VM
-        REMOTE_KEY = credentials('ssh-private-key') // SSH private key credential in Jenkins
+        // Define the GitHub repository URL and the credentials ID for SSH key authentication
+        GITHUB_REPO_URL = 'git@github.com:berehx/jenkins.git'
+        GIT_CREDENTIALS_ID = 'your-ssh-key-id'  // Replace this with your actual credentialsId
     }
 
     stages {
-        // Stage 1: Checkout from GitHub repository
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                checkout scm  // This checks out the code from the Git repository
+                // Checkout the repository using SSH with the specified credentials
+                git credentialsId: "${GIT_CREDENTIALS_ID}", url: "${GITHUB_REPO_URL}"
             }
         }
 
-        // Stage 2: Build (Optional - if you need to compile or prepare the project)
-        stage('Build') {
+        stage('Install Apache') {
             steps {
-                echo 'Building project...'
-                // Add your build commands here if needed (e.g., Maven, Gradle, etc.)
+                // Example of installing Apache server (httpd) on the system
+                script {
+                    sh 'sudo apt update && sudo apt install -y apache2'
+                }
             }
         }
 
-        // Stage 3: Deploy to Remote VM (Install Apache server or deploy application)
+        stage('Start Apache') {
+            steps {
+                // Start the Apache server
+                script {
+                    sh 'sudo systemctl start apache2'
+                }
+            }
+        }
+
+        stage('Check Apache Status') {
+            steps {
+                // Check if Apache is running
+                script {
+                    sh 'sudo systemctl status apache2'
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
-                script {
-                    sshagent([REMOTE_KEY]) {
-                        // Install Apache (httpd) on the remote server (for example)
-                        sh '''
-                        ssh $REMOTE_HOST "sudo apt update"
-                        ssh $REMOTE_HOST "sudo apt install -y apache2"
-                        '''
-                    }
-                }
-            }
-        }
-
-        // Stage 4: Verify Deployment (Check Apache status or application status)
-        stage('Verify Deployment') {
-            steps {
-                script {
-                    sshagent([REMOTE_KEY]) {
-                        // Check if Apache is running on the remote server
-                        sh 'ssh $REMOTE_HOST "systemctl status apache2"'
-                    }
-                }
-            }
-        }
-
-        // Stage 5: Test Deployment (Optional - Check if the app works as expected)
-        stage('Test') {
-            steps {
-                script {
-                    sshagent([REMOTE_KEY]) {
-                        // Test the deployment by checking if Apache responds on port 80
-                        sh 'ssh $REMOTE_HOST "curl -I http://localhost"'
-                    }
-                }
+                // Any additional deployment steps can go here
+                echo 'Deployment completed.'
             }
         }
     }
 
     post {
-        success {
-            echo 'Deployment pipeline executed successfully!'
-        }
-        failure {
-            echo 'Deployment pipeline failed!'
+        always {
+            // Actions to be run after the pipeline, such as cleanup
+            echo 'Pipeline completed'
         }
     }
 }
-
