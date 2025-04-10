@@ -2,16 +2,16 @@ pipeline {
     agent any
 
     environment {
-        // Define the GitHub repository URL and the credentials ID for SSH key authentication
         GITHUB_REPO_URL = 'git@github.com:berehx/jenkins.git'
-        GIT_CREDENTIALS_ID = 'your-ssh-key-id'  // Replace this with your actual credentialsId
+        GIT_CREDENTIALS_ID = 'your-ssh-key-id' // Replace with the actual credentialsId
+        BRANCH_NAME = 'main' // Update to your branch name
     }
 
     stages {
         stage('Checkout SCM') {
             steps {
-                // Checkout the repository using SSH with the specified credentials
-                git credentialsId: "${GIT_CREDENTIALS_ID}", url: "${GITHUB_REPO_URL}"
+                // Checkout the repository using SSH and the correct branch
+                git credentialsId: "${GIT_CREDENTIALS_ID}", url: "${GITHUB_REPO_URL}", branch: "${BRANCH_NAME}"
             }
         }
 
