@@ -1,53 +1,28 @@
 pipeline {
     agent any
-
+    environment {
+        GIT_URL = 'git@github.com:berehx/jenkins.git' // SSH URL for GitHub
+        BRANCH = 'main'  // Replace with your correct branch name
+    }
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
-                // Checkout the code from GitHub repository
-                git 'https://github.com/berehx/jenkins.git'
+                checkout([$class: 'GitSCM', branches: [[name: "*/${env.BRANCH}"]], 
+                          userRemoteConfigs: [[url: env.GIT_URL, credentialsId: 'your-ssh-key-id']]])
             }
         }
-
-        stage('Install Apache') {
+        stage('Build') {
             steps {
-                script {
-                    // You can install Apache directly without using sudo if Jenkins has the necessary permissions
-                    sh 'apt-get update && apt-get install -y apache2'
-                }
-            }
-        }
-
-        stage('Start Apache') {
-            steps {
-                script {
-                    // Start Apache service directly
-                    sh 'systemctl start apache2'
-                }
-            }
-        }
-
-        stage('Check Apache Status') {
-            steps {
-                script {
-                    // Check Apache service status
-                    sh 'systemctl status apache2'
-                }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                echo 'Deploying the application...'
-                // Add your deployment steps here
+                echo 'Building...'
             }
         }
     }
-
     post {
-        always {
-            // Actions that are always executed after the pipeline run (e.g., cleanup)
-            echo 'Pipeline execution finished.'
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }
